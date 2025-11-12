@@ -1,12 +1,12 @@
-FROM gradle:jdk17 AS build
+FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
 COPY build/libs/*.jar app.jar
 
-RUN useradd -m appuser
+RUN useradd -r -u 10001 appuser
 
 USER appuser
 
 EXPOSE 8080
-ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar /app/app.jar"]
+ENTRYPOINT ["java","-jar","/app/app.jar"]
