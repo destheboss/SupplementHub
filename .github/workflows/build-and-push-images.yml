@@ -1,0 +1,82 @@
+name: Build and Push Images
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAMESPACE: ${{ github.repository_owner }}
+
+jobs:
+  changes:
+    name: Detect changed services
+    runs-on: ubuntu-latest
+    outputs:
+      services-json: ${{ steps.synthesize.outputs.services-json }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: filter
+        name: Compute changed paths
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            product:
+              - 'services/product-service/**'
+              - 'services/product-service/Dockerfile'
+            order:
+              - 'services/order-service/**'
+              - 'services/order-service/Dockerfile'
+
+      - id: synthesize
+        name: Build matrix JSON
+        run: |
+          SERVICES='[]'
+
+          if [ "${{ steps.filter.outputs.product }}" = "true" ]; then
+            SERVICES=$(jq -cn '["product-service"]')
+          fi
+
+          if [ "${{ steps.filter.outputs.order }}" = "true" ]; then
+            if [ "$SERVICES" = "[]" ]; then
+              SERVICES=$(jq -cn '["order-service"]')
+            else
+              SERVICES=$(jq -cn --argjson arr "$SERVICES" '$arr + ["order-service"]')
+            fi
+          fi
+
+          echo "services-json=$SERVICES" >> $GITHUB_OUTPUT
+
+  build-and-push:
+    name: Build & Push (${{ matrix.service }})
+    needs: changes
+    if: ${{ needs.changes.outputs.services-json != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.changes.outputs.services-json) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u "${{ github.actor }}" --password-stdin
+
+      - name: Build & Push ${{ matrix.service }}
+        run: |
+          IMAGE_NAME=supplementhub-${{ matrix.service }}
+          docker buildx build \
+            --platform linux/amd64 \
+            -t $REGISTRY/${IMAGE_NAMESPACE}/${IMAGE_NAME}:${{ github.sha }} \
+            -t $REGISTRY/${IMAGE_NAMESPACE}/${IMAGE_NAME}:latest \
+            ./services/${{ matrix.service }} \
+            --push

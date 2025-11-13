@@ -8,15 +8,87 @@ on:
 env:
   JAVA_VERSION: "17"
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  changes:
+    name: Detect changed services
     runs-on: ubuntu-latest
+    outputs:
+      services-json: ${{ steps.synthesize.outputs.services-json }}
+      any-backend-changed: ${{ steps.synthesize.outputs.any-backend-changed }}
     steps:
       - uses: actions/checkout@v4
+
+      - id: filter
+        name: Compute changed paths
+        uses: dorny/paths-filter@v3
+        with:
+          base: ${{ github.event.pull_request.base.sha || 'refs/heads/main' }}
+          filters: |
+            product:
+              - 'services/product-service/**'
+            order:
+              - 'services/order-service/**'
+            buildsystem:
+              - 'build.gradle'
+              - 'settings.gradle'
+              - 'gradle/**'
+              - 'gradle.properties'
+              - '.github/workflows/**'
+
+      - id: synthesize
+        name: Build matrix JSON
+        run: |
+          SERVICES='[]'
+
+          if [ "${{ steps.filter.outputs.product }}" = "true" ]; then
+            SERVICES=$(jq -cn '["product-service"]')
+          fi
+
+          if [ "${{ steps.filter.outputs.order }}" = "true" ]; then
+            if [ "$SERVICES" = "[]" ]; then
+              SERVICES=$(jq -cn '["order-service"]')
+            else
+              SERVICES=$(jq -cn --argjson arr "$SERVICES" '$arr + ["order-service"]')
+            fi
+          fi
+
+          # If build system changed, run both
+          if [ "${{ steps.filter.outputs.buildsystem }}" = "true" ]; then
+            SERVICES='["product-service","order-service"]'
+          fi
+
+          echo "services-json=$SERVICES" >> $GITHUB_OUTPUT
+
+          if [ "$SERVICES" != "[]" ]; then
+            echo "any-backend-changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "any-backend-changed=false" >> $GITHUB_OUTPUT
+          fi
+
+  build:
+    name: Build (${{ matrix.service }})
+    needs: changes
+    if: ${{ needs.changes.outputs.services-json != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.changes.outputs.services-json) }}
+    steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - uses: actions/cache@v4
         with:
           path: |
@@ -24,25 +96,36 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: ${{ runner.os }}-gradle-
-      - name: Build jars
-        run: ./gradlew :services:product-service:bootJar :services:order-service:bootJar --no-daemon
-      - name: Upload jars
+
+      - name: Build jar
+        run: ./gradlew :services:${{ matrix.service }}:bootJar --no-daemon
+
+      - name: Upload jar
         uses: actions/upload-artifact@v4
         with:
-          name: service-jars
-          path: |
-            services/product-service/build/libs/*.jar
-            services/order-service/build/libs/*.jar
+          name: jar-${{ matrix.service }}
+          path: services/${{ matrix.service }}/build/libs/*.jar
 
   test:
+    name: Test (${{ matrix.service }})
     needs: build
+    if: ${{ needs.changes.outputs.services-json != '[]' }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.changes.outputs.services-json) }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - uses: actions/cache@v4
         with:
           path: |
@@ -50,23 +133,32 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: ${{ runner.os }}-gradle-
-      - name: Run tests + jacoco
-        run: ./gradlew test jacocoTestReport --no-daemon
+
+      - name: Run tests + Jacoco
+        run: ./gradlew :services:${{ matrix.service }}:test :services:${{ matrix.service }}:jacocoTestReport --no-daemon
+
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
-          name: jacoco-xml
-          path: '**/build/reports/jacoco/test/jacocoTestReport.xml'
+          name: jacoco-xml-${{ matrix.service }}
+          path: services/${{ matrix.service }}/build/reports/jacoco/test/jacocoTestReport.xml
 
   sonar:
-    needs: test
+    name: SonarCloud
+    needs: [changes, test]
+    if: ${{ needs.changes.outputs.any-backend-changed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - uses: actions/cache@v4
         with:
           path: |
@@ -74,7 +166,12 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: ${{ runner.os }}-gradle-
+
+      # Re-run tests here to have coverage XML in this job’s workspace (simpler than artifact dance)
+      - name: Test + Jacoco (aggregate)
+        run: ./gradlew test jacocoTestReport --no-daemon
+
       - name: SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew test jacocoTestReport :sonar --no-daemon
+        run: ./gradlew :sonar --no-daemon
