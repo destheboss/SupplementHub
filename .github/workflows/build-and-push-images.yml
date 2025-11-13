@@ -60,7 +60,7 @@ jobs:
           echo "Matrix services: $SERVICES_JSON"
 
   build-and-push:
-    name: Build & Push (${{ matrix.service }})
+    name: Build & Push Images
     needs: changes
     if: ${{ needs.changes.outputs.services-json != '[]' }}
     runs-on: ubuntu-latest
