@@ -1,4 +1,4 @@
-package dev.destheboss.microservices.order;
+package dev.destheboss.microservices.inventory.configuration;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
