@@ -33,6 +33,12 @@ jobs:
             order:
               - 'services/order-service/**'
               - 'services/order-service/Dockerfile'
+            inventory:
+              - 'services/inventory-service/**'
+              - 'services/inventory-service/Dockerfile'
+            gateway:
+              - 'services/api-gateway/**'
+              - 'services/api-gateway/Dockerfile'
 
       - id: synthesize
         name: Build matrix JSON (no jq)
@@ -48,6 +54,22 @@ jobs:
               SERVICES="\"order-service\""
             else
               SERVICES="$SERVICES,\"order-service\""
+            fi
+          fi
+          
+          if [ "${{ steps.filter.outputs.inventory }}" = "true" ]; then
+            if [ -z "$SERVICES" ]; then
+              SERVICES="\"inventory-service\""
+            else
+              SERVICES="$SERVICES,\"inventory-service\""
+            fi
+          fi
+          
+          if [ "${{ steps.filter.outputs.gateway }}" = "true" ]; then
+            if [ -z "$SERVICES" ]; then
+              SERVICES="\"api-gateway\""
+            else
+              SERVICES="$SERVICES,\"api-gateway\""
             fi
           fi
 

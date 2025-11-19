@@ -113,6 +113,21 @@ services:
     networks:
       - supplementhub-network
 
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    restart: always
+    ports:
+      - "${GATEWAY_APP_PORT}:9000"
+    depends_on:
+      - product-backend
+      - order-backend
+      - inventory-backend
+    networks:
+      - supplementhub-network
+
 volumes:
   product_db_data: {}
   order_db_data: {}

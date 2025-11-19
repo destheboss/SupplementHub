@@ -33,6 +33,10 @@ jobs:
               - 'services/product-service/**'
             order:
               - 'services/order-service/**'
+            inventory:
+              - 'services/inventory-service/**'
+            gateway:
+              - 'services/api-gateway/**'
             buildsystem:
               - 'build.gradle'
               - 'settings.gradle'
@@ -56,10 +60,26 @@ jobs:
               SERVICES="$SERVICES,\"order-service\""
             fi
           fi
+          
+          if [ "${{ steps.filter.outputs.inventory }}" = "true" ]; then
+            if [ -z "$SERVICES" ]; then
+              SERVICES="\"inventory-service\""
+            else
+              SERVICES="$SERVICES,\"inventory-service\""
+            fi
+          fi
+          
+          if [ "${{ steps.filter.outputs.gateway }}" = "true" ]; then
+            if [ -z "$SERVICES" ]; then
+              SERVICES="\"api-gateway\""
+            else
+              SERVICES="$SERVICES,\"api-gateway\""
+            fi
+          fi
 
           # If build system changed, force both
           if [ "${{ steps.filter.outputs.buildsystem }}" = "true" ]; then
-            SERVICES="\"product-service\",\"order-service\""
+            SERVICES="\"product-service\",\"order-service\",\"inventory-service\",\"api-gateway\""
           fi
 
           if [ -z "$SERVICES" ]; then
