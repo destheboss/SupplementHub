@@ -22,6 +22,10 @@ public class Product {
     private Long id;
 
     @NotNull
+    @Column(name = "sku_code")
+    private String skuCode;
+
+    @NotNull
     @Column(name = "name")
     private String name;
 

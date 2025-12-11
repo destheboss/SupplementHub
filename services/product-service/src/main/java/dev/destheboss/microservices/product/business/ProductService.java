@@ -18,6 +18,7 @@ public class ProductService {
 
     public ProductResponse createProduct(ProductRequest productRequest) {
         Product product = Product.builder()
+                .skuCode(productRequest.skuCode())
                 .name(productRequest.name())
                 .description(productRequest.description())
                 .price(productRequest.price())
@@ -26,13 +27,13 @@ public class ProductService {
 
         String message = "Product created successfully";
         log.info(message);
-        return new ProductResponse(product.getId(), product.getName(), product.getDescription(), product.getPrice());
+        return new ProductResponse(product.getId(), product.getSkuCode(), product.getName(), product.getDescription(), product.getPrice());
     }
 
     public List<ProductResponse> getAllProducts() {
         return productRepository.findAll()
                 .stream()
-                .map(product -> new ProductResponse(product.getId(), product.getName(), product.getDescription(), product.getPrice()))
+                .map(product -> new ProductResponse(product.getId(), product.getSkuCode(), product.getName(), product.getDescription(), product.getPrice()))
                 .toList();
     }
 }

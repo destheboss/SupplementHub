@@ -1,6 +1,5 @@
 package dev.destheboss.microservices.order.integration;
 
-import dev.destheboss.microservices.order.client.InventoryClient;
 import dev.destheboss.microservices.order.stubs.InventoryClientStub;
 import io.restassured.RestAssured;
 import org.hamcrest.Matchers;
@@ -10,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -21,6 +21,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @AutoConfigureWireMock(port = 0)
+@EmbeddedKafka(partitions = 1, topics = { "order-placed" })
 class OrderApiIntegrationTests {
 
     @ServiceConnection
@@ -42,7 +43,10 @@ class OrderApiIntegrationTests {
                 {
                     "skuCode": "iphone_15",
                     "price": 1,
-                    "quantity": 1
+                    "quantity": 1,
+                    "userDetails": {
+                        "email": "test@example.com"
+                    }
                 }
                 """;
         InventoryClientStub.stubInventoryCall("iphone_15", 1);

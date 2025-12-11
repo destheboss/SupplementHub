@@ -34,6 +34,7 @@ class ProductApiIntegrationTests {
     void shouldCreateProduct() {
         String requestBody = """
                 {
+                    "skuCode": "SANDWICH001",
                     "name": "Sandwich",
                     "description": "Has ham and lettuce.",
                     "price": 5
@@ -48,6 +49,7 @@ class ProductApiIntegrationTests {
                 .then()
                 .statusCode(201)
                 .body("id", Matchers.notNullValue())
+                .body("skuCode", Matchers.equalTo("SANDWICH001"))
                 .body("name", Matchers.equalTo("Sandwich"))
                 .body("description", Matchers.equalTo("Has ham and lettuce."))
                 .body("price", Matchers.equalTo(5));
