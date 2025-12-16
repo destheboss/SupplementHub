@@ -1,8 +1,10 @@
 name: Build and Push Images
 
 on:
-  push:
-    branches: [ main ]
+  workflow_run:
+    workflows: ["CI (Quality Gate)"]
+    types:
+      - completed
 
 permissions:
   contents: read
@@ -17,10 +19,17 @@ jobs:
   changes:
     name: Detect changed services
     runs-on: ubuntu-latest
+    if: >
+      ${{
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main'
+      }}
     outputs:
       services-json: ${{ steps.synthesize.outputs.services-json }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - id: filter
         name: Compute changed paths
@@ -39,6 +48,9 @@ jobs:
             gateway:
               - 'services/api-gateway/**'
               - 'services/api-gateway/Dockerfile'
+            notification:
+              - 'services/notification-service/**'
+              - 'services/notification-service/Dockerfile'
 
       - id: synthesize
         name: Build matrix JSON (no jq)
@@ -72,6 +84,14 @@ jobs:
               SERVICES="$SERVICES,\"api-gateway\""
             fi
           fi
+          
+          if [ "${{ steps.filter.outputs.notification }}" = "true" ]; then
+            if [ -z "$SERVICES" ]; then
+              SERVICES="\"notification-service\""
+            else
+              SERVICES="$SERVICES,\"notification-service\""
+            fi
+          fi
 
           if [ -z "$SERVICES" ]; then
             SERVICES_JSON="[]"
@@ -85,7 +105,12 @@ jobs:
   build-and-push:
     name: Build & Push Images
     needs: changes
-    if: ${{ needs.changes.outputs.services-json != '[]' }}
+    if: >
+      ${{
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        needs.changes.outputs.services-json != '[]'
+      }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -93,6 +118,8 @@ jobs:
         service: ${{ fromJSON(needs.changes.outputs.services-json) }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - uses: actions/setup-java@v4
         with:
@@ -117,7 +144,7 @@ jobs:
           IMAGE_NAME=supplementhub-${{ matrix.service }}
           docker buildx build \
             --platform linux/amd64 \
-            -t $REGISTRY/${IMAGE_NAMESPACE}/${IMAGE_NAME}:${{ github.sha }} \
+            -t $REGISTRY/${IMAGE_NAMESPACE}/${IMAGE_NAME}:${{ github.event.workflow_run.head_sha }} \
             -t $REGISTRY/${IMAGE_NAMESPACE}/${IMAGE_NAME}:latest \
             ./services/${{ matrix.service }} \
             --push

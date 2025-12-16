@@ -37,6 +37,8 @@ jobs:
               - 'services/inventory-service/**'
             gateway:
               - 'services/api-gateway/**'
+            notification:
+              - 'services/notification-service/**'
             buildsystem:
               - 'build.gradle'
               - 'settings.gradle'
@@ -76,10 +78,18 @@ jobs:
               SERVICES="$SERVICES,\"api-gateway\""
             fi
           fi
+          
+          if [ "${{ steps.filter.outputs.notification }}" = "true" ]; then
+            if [ -z "$SERVICES" ]; then
+              SERVICES="\"notification-service\""
+            else
+              SERVICES="$SERVICES,\"notification-service\""
+            fi
+          fi
 
           # If build system changed, force both
           if [ "${{ steps.filter.outputs.buildsystem }}" = "true" ]; then
-            SERVICES="\"product-service\",\"order-service\",\"inventory-service\",\"api-gateway\""
+            SERVICES="\"product-service\",\"order-service\",\"inventory-service\",\"api-gateway\",\"notification-service\""
           fi
 
           if [ -z "$SERVICES" ]; then
