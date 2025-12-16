@@ -16,7 +16,9 @@ import java.util.List;
 public class SecurityConfig {
 
     private static final String[] FREE_RESOURCE_URLS = {
-            "/actuator/prometheus"
+            "/actuator/prometheus",
+            "/actuator/health",
+            "/actuator/health/**"
     };
 
     @Bean
