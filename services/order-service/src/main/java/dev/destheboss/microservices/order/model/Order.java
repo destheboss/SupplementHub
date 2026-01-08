@@ -36,4 +36,9 @@ public class Order {
     @NotNull
     @Column(name = "quantity")
     private Integer quantity;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private OrderStatus status;
 }

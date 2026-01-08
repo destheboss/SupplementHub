@@ -68,12 +68,14 @@ services:
     depends_on:
       order-db:
         condition: service_healthy
+      broker:
+        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://order-db:5432/${ORDER_DB_NAME}
       SPRING_DATASOURCE_USERNAME: ${ORDER_DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${ORDER_DB_PASSWORD}
       INVENTORY_SERVICE_URL: ${INVENTORY_SERVICE_URL}
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
       LOKI_URL: http://loki:3100/loki/api/v1/push
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411/api/v2/spans
     ports:
@@ -109,7 +111,10 @@ services:
     depends_on:
       inventory-db:
         condition: service_healthy
+      broker:
+        condition: service_started
     environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
       SPRING_DATASOURCE_URL: jdbc:postgresql://inventory-db:5432/${INVENTORY_DB_NAME}
       SPRING_DATASOURCE_USERNAME: ${INVENTORY_DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${INVENTORY_DB_PASSWORD}
@@ -234,7 +239,8 @@ services:
     container_name: notification-backend
     restart: always
     depends_on:
-      - broker
+      broker:
+        condition: service_started
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
       SPRING_MAIL_HOST: ${MAIL_HOST}

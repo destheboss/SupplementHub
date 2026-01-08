@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -17,10 +18,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-public class InventoryApiIntegrationTests {
+@EmbeddedKafka(partitions = 1, topics = {
+        "inventory-reserve-requested",
+        "inventory-reserved",
+        "inventory-reserve-failed"
+})
+class InventoryApiIntegrationTests {
 
-    @ServiceConnection
     @Container
+    @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
     @LocalServerPort
@@ -34,22 +40,24 @@ public class InventoryApiIntegrationTests {
 
     @Test
     void shouldReadInventory() {
-        var response = RestAssured.given()
+        Boolean response = RestAssured.given()
                 .when()
-                .get("api/inventory?skuCode=iphone_15&quantity=1")
+                .get("/api/inventory?skuCode=iphone_15&quantity=1")
                 .then()
-                .log().all()
                 .statusCode(200)
-                .extract().response().as(Boolean.class);
+                .extract()
+                .as(Boolean.class);
+
         assertTrue(response);
 
-        var negativeResponse = RestAssured.given()
+        Boolean negativeResponse = RestAssured.given()
                 .when()
-                .get("api/inventory?skuCode=iphone_15&quantity=100000")
+                .get("/api/inventory?skuCode=iphone_15&quantity=100000")
                 .then()
-                .log().all()
                 .statusCode(200)
-                .extract().response().as(Boolean.class);
+                .extract()
+                .as(Boolean.class);
+
         assertFalse(negativeResponse);
     }
 }
