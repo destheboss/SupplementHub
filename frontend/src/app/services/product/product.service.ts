@@ -12,10 +12,10 @@ export class ProductService {
   }
 
   getProducts(): Observable<Array<Product>> {
-    return this.httpClient.get<Array<Product>>('https://api.supplementhub.space/gateway/api/product');
+    return this.httpClient.get<Array<Product>>('https://api.supplementhub.space/api/product');
   }
 
   createProduct(product: Product): Observable<Product> {
-    return this.httpClient.post<Product>('https://api.supplementhub.space/gateway/api/product', product);
+    return this.httpClient.post<Product>('https://api.supplementhub.space/api/product', product);
   }
 }

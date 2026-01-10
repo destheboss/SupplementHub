@@ -19,6 +19,6 @@ export class OrderService {
       }),
       responseType: 'text' as 'json'
     };
-    return this.httpClient.post<string>('https://api.supplementhub.space/gateway/api/order', order, httpOptions);
+    return this.httpClient.post<string>('https://api.supplementhub.space/api/order', order, httpOptions);
   }
 }

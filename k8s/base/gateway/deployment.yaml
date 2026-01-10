@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: ghcr.io/destheboss/supplementhub-api-gateway:c8e4f397f894997edfed21292db7a3c807960103
+          image: ghcr.io/destheboss/supplementhub-api-gateway:c0dffdb38bf32bfdaa7c94038e71d577fbe0c482
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9000
