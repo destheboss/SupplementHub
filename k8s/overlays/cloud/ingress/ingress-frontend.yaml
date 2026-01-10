@@ -9,10 +9,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - supplementhub.space
+        - app.supplementhub.space
       secretName: frontend-tls
   rules:
-    - host: supplementhub.space
+    - host: app.supplementhub.space
       http:
         paths:
           - path: /

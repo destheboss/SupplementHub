@@ -50,7 +50,11 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.applyPermitDefaultValues();
 
-        config.setAllowedOrigins(List.of("http://localhost:4200"));
+        config.setAllowedOrigins(List.of(
+                "http://localhost:4200",
+                "https://supplementhub.space",
+                "https://app.supplementhub.space"
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setAllowCredentials(true);
