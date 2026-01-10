@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/destheboss/supplementhub-frontend:87d9716f5960b2d1b14b9e5943a97cd8e6ddd507
+          image: ghcr.io/destheboss/supplementhub-frontend:556b8fcc45d2c8f0d0b9a57699c2f302ddc4ffa0
           imagePullPolicy: Always
           ports:
             - containerPort: 80
