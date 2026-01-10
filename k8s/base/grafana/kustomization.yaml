@@ -1,0 +1,4 @@
+resources:
+  - configmap-datasources.yaml
+  - deployment.yaml
+  - service.yaml

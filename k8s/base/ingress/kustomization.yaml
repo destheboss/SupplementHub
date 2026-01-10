@@ -1,0 +1,5 @@
+resources:
+  - ingress-rewrite.yaml
+  - ingress-keycloak.yaml
+  - ingress-prometheus.yaml
+  - ingress-ui.yaml

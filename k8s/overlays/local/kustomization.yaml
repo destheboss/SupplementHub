@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: supplementhub-local
+
+resources:
+  - namespace.yaml
+  - ../../base/gateway
+  - ../../base/grafana
+  - ../../base/ingress
+  - ../../base/inventory
+  - ../../base/inventory-db
+  - ../../base/kafka
+  - ../../base/kafka-ui
+  - ../../base/keycloak
+  - ../../base/loki
+  - ../../base/notification
+  - ../../base/order
+  - ../../base/order-db
+  - ../../base/product
+  - ../../base/product-db
+  - ../../base/prometheus
+  - ../../base/tempo
+  - ../../base/zookeeper

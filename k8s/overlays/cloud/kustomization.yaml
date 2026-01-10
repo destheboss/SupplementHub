@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: supplementhub-cloud
+
+resources:
+  - namespace.yaml
+  - cluster-issuer.yaml
+
+  # Kafka + Zookeeper
+  - ../../base/zookeeper
+  - ../../base/kafka
+
+  # Auth
+  - ../../base/keycloak
+
+  # Databases (one per service)
+  - ../../base/product-db
+  - ../../base/inventory-db
+  - ../../base/order-db
+
+  # Services
+  - ../../base/product
+  - ../../base/inventory
+  - ../../base/order
+  - ../../base/notification
+  - ../../base/gateway
+
+  # Frontend
+  - ../../base/frontend
+
+  # Ingress (real domains + TLS)
+  - ingress/ingress-gateway.yaml
+  - ingress/ingress-keycloak.yaml
+  - ingress/ingress-frontend.yaml
+
+patchesStrategicMerge:
+  - patches/product-db/product-db-pgdata.yaml
+  - patches/inventory-db/inventory-db-pgdata.yaml
+  - patches/order-db/order-db-pgdata.yaml
+  - patches/keycloak/keycloak-db-pgdata.yaml
+  - patches/keycloak/keycloak-wait-for-db.yaml
+  - patches/keycloak/keycloak-probes.yaml
+  - patches/gateway/gateway-issuer.yaml
+  - patches/keycloak/keycloak-remove-hostname.yaml

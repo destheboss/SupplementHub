@@ -107,3 +107,15 @@ HELP.md
 
 # MongoDB local data
 data/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Observability runtime data
+docker/tempo/tempo-data/
+docker/loki/
+docker/prometheus/
+
+# Keycloak exports (especially users)
+docker/keycloak/export/

@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui
+  labels:
+    app: kafka-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-ui
+  template:
+    metadata:
+      labels:
+        app: kafka-ui
+    spec:
+      containers:
+        - name: kafka-ui
+          image: provectuslabs/kafka-ui:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: KAFKA_CLUSTERS_NAME
+              value: "local"
+            - name: KAFKA_CLUSTERS_BOOTSTRAPSERVERS
+              value: "broker:29092"
+            - name: DYNAMIC_CONFIG_ENABLED
+              value: "true"
+            - name: SERVER_SERVLET_CONTEXT_PATH
+              value: "/kafka-ui"
+
+          startupProbe:
+            httpGet:
+              path: /kafka-ui/
+              port: 8080
+            failureThreshold: 60
+            periodSeconds: 5
+
+          readinessProbe:
+            httpGet:
+              path: /kafka-ui/
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /kafka-ui/
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 6
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

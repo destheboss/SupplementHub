@@ -1,0 +1,37 @@
+name: Build & Push Frontend Image
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/build-and-push-frontend.yml'
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAMESPACE: ${{ github.repository_owner }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u "${{ github.actor }}" --password-stdin
+
+      - name: Build & Push frontend
+        run: |
+          IMAGE_NAME=supplementhub-frontend
+          docker buildx build \
+            --platform linux/amd64 \
+            -t $REGISTRY/${IMAGE_NAMESPACE}/${IMAGE_NAME}:${{ github.sha }} \
+            -t $REGISTRY/${IMAGE_NAMESPACE}/${IMAGE_NAME}:latest \
+            ./frontend \
+            --push
