@@ -16,6 +16,6 @@ export class ProductService {
   }
 
   createProduct(product: Product): Observable<Product> {
-    return this.httpClient.post<Product>('http://supplementhub.local/gateway/api/product', product);
+    return this.httpClient.post<Product>('https://api.supplementhub.space/gateway/api/product', product);
   }
 }
