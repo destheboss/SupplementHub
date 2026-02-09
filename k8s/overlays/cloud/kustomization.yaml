@@ -10,6 +10,7 @@ resources:
   # Kafka + Zookeeper
   - ../../base/zookeeper
   - ../../base/kafka
+  - ../../base/kafka-ui
 
   # Auth
   - ../../base/keycloak

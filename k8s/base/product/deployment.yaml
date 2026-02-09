@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: product-service
-          image: ghcr.io/destheboss/supplementhub-product-service:c8e4f397f894997edfed21292db7a3c807960103
+          image: ghcr.io/destheboss/supplementhub-product-service:2cba25c564b33e88d7e7a2d5740a8ef57d89982b
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
